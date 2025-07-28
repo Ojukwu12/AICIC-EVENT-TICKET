@@ -1,0 +1,23 @@
+{
+  "name": "event-ticker",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "david",
+  "license": "ISC",
+  "description": "",
+  "scripts": {
+     "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon index.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "joi": "^17.13.3",
+    "jsonwebtoken": "^9.0.2",
+    "mongodb": "^6.16.0",
+    "mongoose": "^8.14.1",
+    "morgan": "^1.10.0",
+    "nodemailer": "^7.0.3"
+  }
+}
