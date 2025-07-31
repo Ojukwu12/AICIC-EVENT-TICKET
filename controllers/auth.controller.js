@@ -161,6 +161,36 @@ exports.refreshToken = asyncHandler(async (req, res, next) => {
   });
 });
 
+exports.getMyProfile = asyncHandler(async (req, res, next) =>{
+  const token = req.headers.authorization.split(" ")[1];
+  if (!token) {
+    return next(new AppError("No token found. Please login again", 401));
+  }
+  const decoded = jwt.verify(token, process.env.JWT_SECRET);
+  if (!decoded) {
+    return next(new AppError("Invalid token", 403));
+  }
+  const user = await User.findById(decoded.id)
+  if (!user) {
+    return next(new AppError("User not found", 404));
+  }
+  res.status(200).json({
+    status: "success",
+    data: {
+      user,
+    },
+  });
+})
+exports.logout = asyncHandler(async (req,res,next) =>{res.clearCookie("refreshToken", {
+  httpOnly: true,
+  secure: true
+});
+  res.status(200).json({
+    status: "success",
+    message: "Logged out successfully",
+  });
+});
+
 function generateToken(res, userId) {
   // 1) to generate a token from the user ID
   const token = jwt.sign({ id: userId }, process.env.JWT_SECRET, {
