@@ -81,7 +81,9 @@ const sort = req.query.sort || "date"
 
 const total = await Event.countDocuments(filter)
 const event = await Event.find(filter).sort(sort).skip(skip).limit(limit)
-
+if (event.length === 0) {
+   return next(new AppError("No events found", 404));
+ }
 res.status(200).json({
  Success: true,
  total,
@@ -154,3 +156,113 @@ exports.getEventById = asyncHandler(async (req, res, next) => {
    Data: event
  });
 })
+
+exports.deleteEvent = asyncHandler(async (req, res, next) => {
+ const id = req.params.id;
+
+ // Validate ObjectId format
+ if (!mongoose.Types.ObjectId.isValid(id)) {
+   return next(new AppError("Invalid event ID format", 400));
+ }
+
+ const event = await Event.findByIdAndDelete(id);
+ if (!event) {
+   return next(new AppError("Event not found", 404));
+ }
+
+ res.status(200).json({
+   status: "success",
+   message: "Event deleted successfully",
+ });
+})
+
+exports.updateEvent = asyncHandler(async (req, res, next) => {
+
+ const id = req.params.id;
+ // Validate ObjectId format
+ if (!mongoose.Types.ObjectId.isValid(id)) {
+   return next(new AppError("Invalid event ID format", 400));
+ }
+ const schema = joi.object({
+   title: joi.string(),
+   description: joi.string(),
+   category: joi.string().valid("workshop", "seminar", "conference", "meetup", "party", "other"),
+   date: joi.date(),
+   location: joi.string(),
+   time: joi.string(),
+   status: joi.string().valid("draft", "published", "cancelled"),
+   totalTickets: joi.number().min(1),
+   availableTickets: joi.number().min(0),
+   media: joi.string(),
+   price: joi.number().min(0)
+ });
+ const { value, error } = schema.validate(req.body);
+ if (error) { 
+   return next(new AppError(error.details[0].message, 400));
+ }
+ const event = await Event.findByIdAndUpdate(id,value,{new: true});
+ if (!event) {
+   return next(new AppError("Event not found", 404));
+ }
+ if (req.user._id.toString() !== event.organizer.toString()) {
+   return next(new AppError("You are not authorized to update this event", 403));
+ }
+ res.status(200).json({
+   status: "success",
+   Message: "Event updated successfully",
+   data: {
+     event
+   }
+ });
+
+})
+
+exports.getEventByOrganizer = asyncHandler(async (req, res, next) => {
+ const organizerId = req.user._id;
+ if (!mongoose.Types.ObjectId.isValid(organizerId)) {
+   return next(new AppError("Invalid organizer ID format", 400));
+ }
+ const event = await Event.find({ organizer: organizerId});
+ if(!event || event.length === 0) {
+   return next(new AppError("No events found for this organizer", 404));
+  }
+  res.status(200).json({
+   status: success,
+   Message: "Events retrieved successfully",
+   data: {
+     event
+   } 
+  })
+})
+
+exports.toggleEventStatus = asyncHandler(async (req, res, next) => {
+ const id = req.params.id;
+ // Validate ObjectId format
+ if (!mongoose.Types.ObjectId.isValid(id)) {
+   return next(new AppError("Invalid event ID format", 400));
+ }
+ const event = await Event.findById(id);
+ if (!event) {
+   return next(new AppError("Event not found", 404));
+ }
+ if (req.user._id.toString() !== event.organizer.toString()) {
+   return next(new AppError("You are not authorized to change the status of this event", 403));
+ }
+ 
+ // Toggle status
+ if (event.status === "published") {
+   event.status = "draft";
+ } else if (event.status === "draft") {
+   event.status = "published";
+ } else {
+   return next(new AppError("Cannot toggle status for cancelled events", 400));
+ }
+ await event.save();
+ res.status(200).json({
+   status: "success",
+   message: `Event status changed to ${event.status}`,
+   data: {
+     event
+   }
+ });
+});
