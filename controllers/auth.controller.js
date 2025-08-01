@@ -12,6 +12,7 @@ exports.signup = asyncHandler(async (req, res, next) => {
     email: Joi.string().email().required(),
     password: Joi.string().min(6).required(),
     confirmPassword: Joi.string().required(),
+    role: Joi.string().valid("attendee", "organizer").required(),
   });
 
   const { error, value } = schema.validate(req.body);

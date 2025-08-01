@@ -21,17 +21,10 @@ const userSchema = new mongoose.Schema({
   },
   role: {
    type: String,
-   enum: ['user', 'admin'],
-   default: 'user',
+   enum: ['attendee', 'admin', 'organizer'],
+   required: true,
   },
   passwordUpdatedAt: Date,
-
-  OTP: {
-   type: Number,
-  },
-  otpExpiresAt: {
-   type: Date
-  },
   resetPasswordToken: {
    type: String,
   },

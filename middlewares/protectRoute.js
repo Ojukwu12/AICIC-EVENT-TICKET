@@ -17,7 +17,7 @@ exports.protectRoute = asyncHandler(async (req, res, next) => {
    return next(new AppError("The user belonging to this token no longer exists", 401));
  }
  if (User.passwordUpdatedAt > new Date(decoded.iat * 1000)){
-  return new AppError("This password was recently changed, Please log in again", 400)
+  return next(new AppError("This password was recently changed, Please log in again", 400))
  } 
  req.user = currentUser;
  next(); 
