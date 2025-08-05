@@ -1,9 +1,7 @@
 const asyncHandler = require("../utils/asyncHandler");
 const AppError = require("../utils/appError");
 const axios = require("axios");
-const Booking = require("../models/booking.model");
-const User = require("../models/user.model");
-const Event = require("../models/event.model");
+const Booking = require("../models/tickets.model");
 const joi = require("joi");
 const crypto = require("crypto");
 const mongoose = require("mongoose");
@@ -60,8 +58,11 @@ exports.initializePayment = asyncHandler(async (req, res, next) => {
       },
     }
   );
-  const { authorization_url, reference } = response.data.data;
+  const { authorization_url, reference, ...paymentData } = response.data.data;
   booking.ticketRef = reference;
+  booking.paymentDetails = {...paymentData}
+  await booking.save();
+
   res
     .status(200)
     .json({
@@ -215,3 +216,96 @@ exports.getPaymentDetails = asyncHandler(async (req, res, next) => {
   res.status(200).json({ status: "success", data: details });
 });
 
+exports.getPaymentInfo = asyncHandler(async (req, res, next) => {
+  const bookingId = req.params.bookingId;
+  const booking = await Booking.findById(bookingId).select("paymentInfo");
+  
+  if (!booking) {
+    return next(new AppError("Booking not found", 404));
+  }
+  res.status(200).json({ status: "success", data: booking.paymentInfo });
+});
+
+exports.getUserPayments = asyncHandler(async (req, res, next) => {
+ const userId = req.user._id;
+  const bookings = await Booking.find({ attendee: userId });
+  if (!bookings || bookings.length === 0) {
+    return next(new AppError("No payments found for this user", 404));
+  }
+  const paymentHistory = bookings.map(booking => ({paymentInfo: booking.paymentInfo, event: booking.event}));
+  res.status(200).json({ status: "success", data: paymentHistory });
+})
+
+exports.completeFreeBookings = asyncHandler(async (req, res, next) => {
+ const bookingId = req.params.bookingId;
+ const booking = await Booking.findById(bookingId);
+ if (!booking) {
+   return next(new AppError("Booking not found", 404));
+ }
+ if (booking.totalPrice > 0) {
+   return next(new AppError("This booking is not free", 400));
+ }
+ if (booking.status === "paid") {
+   return res.status(200).json({
+     status: "success",
+     message: "Booking already completed",
+   });
+ }
+ if(booking.status === "cancelled"){
+  return next(new AppError("This booking has been cancelled", 400));
+ }
+ if(req.user._id.toString() !== booking.attendee.toString()) {
+   return next(new AppError("You are not authorized to complete this booking", 403));
+ }
+ booking.status = "paid";
+ booking.paymentDetails = {
+   status: "free",
+   amount: 0,
+   currency: "NGN",
+   paidAt: new Date(),
+   reference: crypto.randomBytes(16).toString("hex"),
+ }
+ booking.paymentInfo = {
+   amount: 0,
+   currency: "NGN",
+   paidAt: new Date(),
+   reference: booking.paymentDetails.reference,
+   channel: "free",
+   bank: null,
+   cardType: null,
+   customer: {
+     email: req.user.email,
+     name: req.user.name,
+   },
+ };
+ await booking.save();
+ res.status(200).json({
+   status: "success",
+   message: "Free booking completed successfully",
+ });
+})
+
+exports.getAllPayments = asyncHandler(async (req, res, next) => {
+   const filter = req.query.filter || {};
+   if (req.query.eventId) {
+     if (!mongoose.Types.ObjectId.isValid(req.query.eventId)) {
+       return next(new AppError("Invalid event ID format", 400));
+     }
+     filter.event = req.query.eventId;
+   }
+   if (req.query.status) {
+     filter.status = req.query.status;
+   }
+   if (req.query.attendeeId) {
+     if (!mongoose.Types.ObjectId.isValid(req.query.attendeeId)) {
+       return next(new AppError("Invalid attendee ID format", 400));
+     }
+     filter.attendee = req.query.attendeeId;
+   }
+   const booking = await Booking.find(filter)
+   const paymentData = booking.map((booking) => ({
+     paymentInfo: booking.paymentInfo,
+     event: booking.event,
+   }));
+   res.status(200).json({ status: "success", data: paymentData });
+})

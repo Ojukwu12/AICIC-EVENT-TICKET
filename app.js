@@ -6,6 +6,7 @@ const { userRoute } = require("./routes/user.route");
 const authRoute = require("./routes/auth.route");
 const eventRoute = require("./routes/event.route")
 const ticketRoute = require("./routes/ticket.route");
+const paymentRoute = require("./routes/payment.route");
 const errorHandler = require("./controllers/error.controller");
 const cookieParser = require("cookie-parser");
 
@@ -17,6 +18,7 @@ app.use("/api/v1/users", userRoute);
 app.use("/api/v1/auth", authRoute);
 app.use("/api/v1/events", eventRoute);
 app.use("/api/v1/tickets", ticketRoute);
+app.use("api/v1/payments", paymentRoute);
 app.use((req, res, next) => {
   next(
     new AppError(
