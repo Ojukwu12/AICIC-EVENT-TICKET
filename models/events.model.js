@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const User = require('./user.model');
-const { required } = require('joi');
+
 
 const eventSchema = new mongoose.Schema({
   // Basic Info
