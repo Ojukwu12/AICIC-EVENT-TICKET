@@ -3,7 +3,7 @@ const asyncHandler = require("../utils/asyncHandler");
 const AppError = require("../utils/appError");
 const jwt = require("jsonwebtoken");
 const Joi = require("joi");
-const sendEmail = require("../utils/mailer");
+const {sendMail} = require("../utils/sendMail");
 const crypto = require("crypto");
 
 exports.signup = asyncHandler(async (req, res, next) => {
@@ -24,6 +24,11 @@ exports.signup = asyncHandler(async (req, res, next) => {
     return next(new AppError("Passwords do not match", 400));
   }
   const user = await User.create(value);
+  try {
+    await sendMail("everybody", "signup",  {"user.name":user.name} , user.email, "Successful Signup", next);
+    } catch (error) {
+      console.error("Error sending signup email:", error);
+    }
 
   return generateToken(res, user._id);
 });
@@ -39,7 +44,7 @@ exports.login = asyncHandler(async (req, res, next) => {
     return next(new AppError(error.details[0].message, 400));
   }
   const foundUser = await User.findOne({ email: value.email }).select(
-    "password"
+    "+password"
   );
 
   if (
@@ -49,7 +54,7 @@ exports.login = asyncHandler(async (req, res, next) => {
       foundUser.password
     ))
   )
-    return next(new AppError("Invalid credentials", 404));
+    return next(new AppError("Invalid credentials", 401));
 
   return generateToken(res, foundUser._id);
 });
@@ -74,22 +79,15 @@ exports.forgotPassword = asyncHandler(async (req, res, next) => {
   const resetURL = `${req.protocol}://${req.get(
     "host"
   )}/api/v1/auth/resetPassword/${resetToken}`;
-  const subject = "Your password reset token (valid for 1 hour)";
-  const message = `You requested a password reset. \n\n
-  Click the link below to reset your password. This link will expire in 1 hour:\n
-  ${resetURL}\n\n
-  If you did not request this, please ignore this email.`;
-  console.log("sending email to:", user.email);
-  const cleanEmail = user.email.trim();
-  try {
-    await sendEmail(cleanEmail, subject, message);
-    res.status(200).json({
-      status: "success",
-      message: "Token sent to email!",
-    });
-  } catch (err) {
-    console.error("Error sending email:", err.message);
-    console.error("Error details:", err);
+  
+  try{
+    await sendMail("everybody", "forgotPassword", {"user.name":user.name, "resetUrl":resetURL}, user.email, "Forgot Password", next);
+     res.status(200).json({
+       status: "success",
+       message: "Token sent to email!",
+     });
+  }catch (error) {
+    console.error("Error details:", error);
     // Reset the token and expiration date on the user object
     user.resetPasswordToken = undefined;
     user.resetPasswordExpires = undefined;
@@ -132,7 +130,11 @@ exports.resetPassword = asyncHandler(async (req, res, next) => {
   user.resetPasswordToken = undefined;
   user.resetPasswordExpires = undefined;
   await user.save();
-
+  try {
+    await sendMail("everybody", "resetPassword", {"user.name":user.name}, user.email, "Password Reset Successful", next);
+  } catch (error) {
+    console.error("Error sending reset password email:", error);
+  }
   generateToken(res, user._id);
 });
 
@@ -193,7 +195,6 @@ exports.logout = asyncHandler(async (req,res,next) =>{res.clearCookie("refreshTo
 });
 
 function generateToken(res, userId) {
-  // 1) to generate a token from the user ID
   const token = jwt.sign({ id: userId }, process.env.JWT_SECRET, {
     expiresIn: "15min",
   });
@@ -206,5 +207,4 @@ function generateToken(res, userId) {
       maxAge: 30 * 24 * 60 * 60 * 1000,
     })
     .json({ token });
-  // 2) to send the token as a response back to the client
 }

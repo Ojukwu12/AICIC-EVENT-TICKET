@@ -5,6 +5,7 @@ const AppError = require("../utils/appError");
 const asyncHandler = require("../utils/asyncHandler");
 const joi = require("joi");
 const mongoose = require("mongoose");
+const { sendMail } = require("../utils/sendMail");
 
 exports.reserveBooking = asyncHandler(async (req, res, next) => {
   const Schema = joi.object({
@@ -67,7 +68,12 @@ exports.reserveBooking = asyncHandler(async (req, res, next) => {
     newBooking.expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
     await newBooking.save();
   }
-
+  // Send confirmation email
+  try {
+    await sendMail("everybody", "ticketBookingSuccesful", {"user.name": req.user.name,"newBooking.ticketRef": newBooking.ticketRef, "event.name": event.name, "event.date": event.date }, req.user.email, "Ticket Booking Successful", next);}catch (error) {
+      console.error("Error sending booking confirmation email:", error);
+      return next(new AppError("Failed to send booking confirmation email", 500));
+    }
   res.status(201).json({
     status: "success",
     data: { booking: newBooking },

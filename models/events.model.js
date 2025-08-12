@@ -45,6 +45,11 @@ const eventSchema = new mongoose.Schema({
     default: "draft",
     required: true,
   },
+  approval: {
+    type: String,
+    enum: ["pending", "approved", "rejected"],
+    default: "pending",
+  },
   // Capacity tracking
   totalTickets: {
     type: Number,
