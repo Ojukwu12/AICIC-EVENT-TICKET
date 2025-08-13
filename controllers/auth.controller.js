@@ -195,6 +195,7 @@ exports.logout = asyncHandler(async (req,res,next) =>{res.clearCookie("refreshTo
 });
 
 function generateToken(res, userId) {
+  console.log("Process started", process.env.JWT_SECRET, process.env);
   const token = jwt.sign({ id: userId }, process.env.JWT_SECRET, {
     expiresIn: "15min",
   });
