@@ -3,7 +3,7 @@ const asyncHandler = require("../utils/asyncHandler");
 const AppError = require("../utils/appError");
 const jwt = require("jsonwebtoken");
 const Joi = require("joi");
-const {sendMail} = require("../utils/sendMail");
+const { sendMail } = require("../utils/sendMail");
 const crypto = require("crypto");
 
 exports.signup = asyncHandler(async (req, res, next) => {
@@ -25,15 +25,29 @@ exports.signup = asyncHandler(async (req, res, next) => {
   }
   const user = await User.create(value);
   try {
-    await sendMail("everybody", "signup",  {"user.name":user.name} , user.email, "Successful Signup", next);
-    } catch (error) {
-      console.error("Error sending signup email:", error);
-    }
+    await sendMail(
+      "everybody",
+      "signup",
+      { "user.name": user.name },
+      user.email,
+      "Successful Signup",
+      next
+    );
+  } catch (error) {
+    console.error("Error sending signup email:", error);
+  }
 
   return generateToken(res, user._id);
 });
 
 exports.login = asyncHandler(async (req, res, next) => {
+  // ✅ Add debug logging
+  console.log("JWT_SECRET exists:", !!process.env.JWT_SECRET);
+  console.log(
+    "JWT_REFRESH_SECRET exists:",
+    !!process.env.JWT_REFRESH_SECRET
+  );
+
   const schema = Joi.object({
     email: Joi.string().email().required(),
     password: Joi.string().min(6).required(),
@@ -53,8 +67,9 @@ exports.login = asyncHandler(async (req, res, next) => {
       value.password,
       foundUser.password
     ))
-  )
+  ) {
     return next(new AppError("Invalid credentials", 401));
+  }
 
   return generateToken(res, foundUser._id);
 });
@@ -79,14 +94,21 @@ exports.forgotPassword = asyncHandler(async (req, res, next) => {
   const resetURL = `${req.protocol}://${req.get(
     "host"
   )}/api/v1/auth/resetPassword/${resetToken}`;
-  
-  try{
-    await sendMail("everybody", "forgotPassword", {"user.name":user.name, "resetUrl":resetURL}, user.email, "Forgot Password", next);
-     res.status(200).json({
-       status: "success",
-       message: "Token sent to email!",
-     });
-  }catch (error) {
+
+  try {
+    await sendMail(
+      "everybody",
+      "forgotPassword",
+      { "user.name": user.name, resetUrl: resetURL },
+      user.email,
+      "Forgot Password",
+      next
+    );
+    res.status(200).json({
+      status: "success",
+      message: "Token sent to email!",
+    });
+  } catch (error) {
     console.error("Error details:", error);
     // Reset the token and expiration date on the user object
     user.resetPasswordToken = undefined;
@@ -131,11 +153,18 @@ exports.resetPassword = asyncHandler(async (req, res, next) => {
   user.resetPasswordExpires = undefined;
   await user.save();
   try {
-    await sendMail("everybody", "resetPassword", {"user.name":user.name}, user.email, "Password Reset Successful", next);
+    await sendMail(
+      "everybody",
+      "resetPassword",
+      { "user.name": user.name },
+      user.email,
+      "Password Reset Successful",
+      next
+    );
   } catch (error) {
     console.error("Error sending reset password email:", error);
   }
-  generateToken(res, user._id);
+  return generateToken(res, user._id);
 });
 
 exports.refreshToken = asyncHandler(async (req, res, next) => {
@@ -164,16 +193,18 @@ exports.refreshToken = asyncHandler(async (req, res, next) => {
   });
 });
 
-exports.getMyProfile = asyncHandler(async (req, res, next) =>{
+exports.getMyProfile = asyncHandler(async (req, res, next) => {
   const token = req.headers.authorization.split(" ")[1];
   if (!token) {
-    return next(new AppError("No token found. Please login again", 401));
+    return next(
+      new AppError("No token found. Please login again", 401)
+    );
   }
   const decoded = jwt.verify(token, process.env.JWT_SECRET);
   if (!decoded) {
     return next(new AppError("Invalid token", 403));
   }
-  const user = await User.findById(decoded.id)
+  const user = await User.findById(decoded.id);
   if (!user) {
     return next(new AppError("User not found", 404));
   }
@@ -183,11 +214,12 @@ exports.getMyProfile = asyncHandler(async (req, res, next) =>{
       user,
     },
   });
-})
-exports.logout = asyncHandler(async (req,res,next) =>{res.clearCookie("refreshToken", {
-  httpOnly: true,
-  secure: true
 });
+exports.logout = asyncHandler(async (req, res, next) => {
+  res.clearCookie("refreshToken", {
+    httpOnly: true,
+    secure: true,
+  });
   res.status(200).json({
     status: "success",
     message: "Logged out successfully",
@@ -195,17 +227,36 @@ exports.logout = asyncHandler(async (req,res,next) =>{res.clearCookie("refreshTo
 });
 
 function generateToken(res, userId) {
-  console.log("Process started", process.env.JWT_SECRET, process.env);
+  // ✅ Add validation for environment variables
+  if (!process.env.JWT_SECRET) {
+    throw new Error("JWT_SECRET environment variable is not defined");
+  }
+  if (!process.env.JWT_REFRESH_SECRET) {
+    throw new Error(
+      "JWT_REFRESH_SECRET environment variable is not defined"
+    );
+  }
+
   const token = jwt.sign({ id: userId }, process.env.JWT_SECRET, {
     expiresIn: "15min",
   });
-  const refreshToken = jwt.sign({id: userId}, process.env.JWT_REFRESH_SECRET,{expiresIn: "30d"});
+  const refreshToken = jwt.sign(
+    { id: userId },
+    process.env.JWT_REFRESH_SECRET,
+    {
+      expiresIn: "30d",
+    }
+  );
+
+  const cookieOptions = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    maxAge: 30 * 24 * 60 * 60 * 1000,
+  };
+
   res
     .status(200)
-    .cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: true,
-      maxAge: 30 * 24 * 60 * 60 * 1000,
-    })
+    .cookie("refreshToken", refreshToken, cookieOptions)
     .json({ token });
 }
