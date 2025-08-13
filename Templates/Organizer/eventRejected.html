@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Status</title>
+</head>
+<body style="background-color: black; color: aliceblue;">
+    <img src="">
+    <div  style="display: grid; padding: 3em; justify-content: center;">
+        <h1  style="padding-bottom: 1em; color: ivory(0, 255, 0); font-size: 3em;">
+            Event Status
+        </h1>
+        <p style="padding: 0; margin: 0; font-size: 1.5em;">
+            Dear <span style="color: blue;">{{user.name}}</span>,
+            Your event <span style="color: ivory;">{{event.name}}</span> 
+            scheduled for <span style="color: blue;">{{event.date}}</span> 
+            was unfortunately Rejected.
+        </p>
+        <p style="padding-top: 2em; margin-top: 1em;padding-bottom: 2em; margin-bottom: 1em; font-size: 1.5em;">
+            If you have any questions regarding the decision, please contact The admin via Email at {{admin.email}}.
+        </p>
+         <p style="color: dimgray; padding-top: 2em; margin-top: 1em;">
+        From: <br> 
+        Event Ticket Team
+    </div>
+</body>
+</html>

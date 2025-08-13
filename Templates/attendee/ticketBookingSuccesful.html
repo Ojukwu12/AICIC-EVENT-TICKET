@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ticket Booking Successful</title>
+    <link rel="stylesheet" href="success.css">
+</head>
+<body style="background-color: black;color: aliceblue; ">
+    <img src="">
+    <div  style="display: grid; padding: 3em; justify-content: center;">
+    <h1 style="padding-bottom: 1em;">
+        Ticket Booking Successful 
+    </h1>
+    <div style="font-size: 1.5em;">
+    <p style="padding: 0; margin: 0;">
+        Hello {{user.name}} <br><br> Your Ticket id 
+        <span style=" color: blue;">{{newBooking.ticketRef}}</span>, for the event 
+        <span style=" color: blue;">{{event.name}}</span> on <br><br>
+        <span style=" color: blue;">{{event.date}}</span> has been successfully booked.<br><br>
+        <strong>Note:</strong> Please make your payment before 24 hours or your booking will be cancelled.
+        
+    </p>
+    <p style="padding-top: 2em; margin-top: 1em;padding-bottom: 2em; margin-bottom: 1em;">
+        If you have any questions, feel free to reach out to our support team.
+    </p>
+      <p style="color: dimgray; padding-top: 2em; margin-top: 1em;">
+        From: <br> 
+        Event Ticket Team
+    </p>
+    </div>
+</body>
+</html>
