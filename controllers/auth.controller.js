@@ -41,13 +41,6 @@ exports.signup = asyncHandler(async (req, res, next) => {
 });
 
 exports.login = asyncHandler(async (req, res, next) => {
-  // ✅ Add debug logging
-  console.log("JWT_SECRET exists:", !!process.env.JWT_SECRET);
-  console.log(
-    "JWT_REFRESH_SECRET exists:",
-    !!process.env.JWT_REFRESH_SECRET
-  );
-
   const schema = Joi.object({
     email: Joi.string().email().required(),
     password: Joi.string().min(6).required(),
