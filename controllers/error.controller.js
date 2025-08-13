@@ -40,19 +40,18 @@ function sendProdError(err, res) {
   if (err.isOperational) {
     res.status(err.statusCode).json({ message: err.message });
   } else {
-    res
-      .status(500)
-      .json({
-        message:
-          "Something went horribly wrong, please try again later",
-      });
+    res.status(500).json({
+      message:
+        "Something went horribly wrong, please try again later",
+    });
   }
 }
 
 exports.globalErrorHandler = (err, req, res, next) => {
+  console.error("Global Error", err);
   if (process.env.NODE_ENV === "development") {
     sendDevError(err, res);
-  } else{
+  } else {
     let error = { ...err };
     error.message = err.message;
     if (error.name === "CastError") error = handleCastErrorDB(error);
