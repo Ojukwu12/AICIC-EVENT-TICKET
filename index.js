@@ -1,6 +1,4 @@
-console.log("ENV START HERE");
-console.log(process.env);
-console.log("ENV END HERE");
+
 const dotenv = require("dotenv");
 
 const app = require("./app");
