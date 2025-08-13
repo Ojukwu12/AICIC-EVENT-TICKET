@@ -1,3 +1,4 @@
+console.log("JWT IS", process.env.JWT_SECRET);
 const dotenv = require("dotenv");
 if (process.env.NODE_ENV !== "production") {
   dotenv.config({ path: "config.env" });
