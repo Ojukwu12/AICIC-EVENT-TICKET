@@ -3,7 +3,8 @@ const asyncHandler = require("../utils/asyncHandler")
 const joi = require("joi")
 const mongoose = require("mongoose")
 const User = require("../models/user.model")
-const Event = require("../models/events.model")
+const Event = require("../models/events.model");
+const { sendMail } = require("../utils/sendMail");
 
 exports.postEvent = asyncHandler(async (req, res, next) =>{
        const schema = joi.object({
@@ -29,10 +30,25 @@ exports.postEvent = asyncHandler(async (req, res, next) =>{
            return next(new AppError("You are not authorized to create this event", 403))
         }
        value.userId = req.user._id
-
+      
        const event = await Event.create(value)
+       
+       const eventId = event._id
+       const baseUrl = process.env.BASE_URL
+       const editLink = `${baseUrl}/api/v1/events/${eventId}`
+       try{
+        await sendMail("Organizer", "eventPosted", {
+            "user.name": req.user.name,
+            "event.name": event.title,
+            "event.date": event.date,
+            "editLink": editLink
+        })
+       }catch(error){
+        console.error("Error sending event posted email:", error);
+        return next(new AppError("Failed to send event posted email", 500));
+       }
        res.status(201).json({
-           status: "success",
+           Success: "true",
            data: {
                event
            }
@@ -142,7 +158,6 @@ exports.eventByCategory = asyncHandler(async(req,res,next)=>{
 exports.getEventById = asyncHandler(async (req, res, next) => {
  const id = req.params.id;
  
- // Validate ObjectId format
  if (!mongoose.Types.ObjectId.isValid(id)) {
    return next(new AppError("Invalid event ID format", 400));
  }
@@ -179,7 +194,6 @@ exports.deleteEvent = asyncHandler(async (req, res, next) => {
 exports.updateEvent = asyncHandler(async (req, res, next) => {
 
  const id = req.params.id;
- // Validate ObjectId format
  if (!mongoose.Types.ObjectId.isValid(id)) {
    return next(new AppError("Invalid event ID format", 400));
  }
@@ -237,7 +251,6 @@ exports.getEventByOrganizer = asyncHandler(async (req, res, next) => {
 
 exports.toggleEventStatus = asyncHandler(async (req, res, next) => {
  const id = req.params.id;
- // Validate ObjectId format
  if (!mongoose.Types.ObjectId.isValid(id)) {
    return next(new AppError("Invalid event ID format", 400));
  }
@@ -248,8 +261,6 @@ exports.toggleEventStatus = asyncHandler(async (req, res, next) => {
  if (req.user._id.toString() !== event.organizer.toString()) {
    return next(new AppError("You are not authorized to change the status of this event", 403));
  }
- 
- // Toggle status
  if (event.status === "published") {
    event.status = "draft";
  } else if (event.status === "draft") {
