@@ -42,7 +42,7 @@ exports.postEvent = asyncHandler(async (req, res, next) =>{
             "event.name": event.title,
             "event.date": event.date,
             "editLink": editLink
-        })
+        }, req.user.email, "Event Successfully Posted", next);
        }catch(error){
         console.error("Error sending event posted email:", error);
         return next(new AppError("Failed to send event posted email", 500));
