@@ -18,7 +18,7 @@ app.use("/api/v1/users", userRoute);
 app.use("/api/v1/auth", authRoute);
 app.use("/api/v1/events", eventRoute);
 app.use("/api/v1/tickets", ticketRoute);
-app.use("api/v1/payments", paymentRoute);
+app.use("/api/v1/payments", paymentRoute);
 app.use((req, res, next) => {
   next(
     new AppError(
