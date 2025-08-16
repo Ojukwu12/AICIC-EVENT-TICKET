@@ -29,7 +29,10 @@ exports.postEvent = asyncHandler(async (req, res, next) =>{
        if(req.user._id.toString() !== value.organizer){
            return next(new AppError("You are not authorized to create this event", 403))
         }
-       value.userId = req.user._id
+      const eventDate = new Date(value.date);
+       eventDate.setHours(0,0,0,0);
+       value.date = eventDate;
+       value.userId = req.user._id;
       
        const event = await Event.create(value)
        
@@ -48,10 +51,11 @@ exports.postEvent = asyncHandler(async (req, res, next) =>{
         return next(new AppError("Failed to send event posted email", 500));
        }
        res.status(201).json({
-           Success: "true",
+           success: true,
            data: {
                event
-           }
+           },
+           message: "Operation succesful"
        })
 })
 
@@ -105,7 +109,8 @@ res.status(200).json({
  total,
  page,
  pages: Math.ceil(total/limit),
- Data: event
+ Data: event,
+ message: "Operation successful"
 })
 })
 
@@ -124,9 +129,10 @@ exports.eventBySearch = asyncHandler(async (req,res,next) => {
   }
   const event = await Event.find(filter);
    res.status(200).json({
-     Message: "Success",
+     success: true,
      length: event.length,
      Data: event,
+     Message: "Operation successful"
    });
 })
 
@@ -149,9 +155,10 @@ exports.eventByCategory = asyncHandler(async(req,res,next)=>{
       return next(new AppError("No events found for this category", 404));
     }
     res.status(200).json({
-     Message: "Success",
+     success: true,
      length: event.length,
-     Data: event
+     data: event,
+     message: "Operation successful"
     })
 })
 
@@ -167,8 +174,9 @@ exports.getEventById = asyncHandler(async (req, res, next) => {
    return next(new AppError("Event not found", 404));
  }
  res.status(200).json({
-   Message: "Success",
-   Data: event
+   success: true,
+   message: "Operation successful",
+   data: event
  });
 })
 
@@ -186,8 +194,8 @@ exports.deleteEvent = asyncHandler(async (req, res, next) => {
  }
 
  res.status(200).json({
-   status: "success",
-   message: "Event deleted successfully",
+   success: true,
+   message: "Operation successful",
  });
 })
 
@@ -222,8 +230,8 @@ exports.updateEvent = asyncHandler(async (req, res, next) => {
    return next(new AppError("You are not authorized to update this event", 403));
  }
  res.status(200).json({
-   status: "success",
-   Message: "Event updated successfully",
+   success: true,
+   message: "Operation successful",
    data: {
      event
    }
@@ -241,8 +249,8 @@ exports.getEventByOrganizer = asyncHandler(async (req, res, next) => {
    return next(new AppError("No events found for this organizer", 404));
   }
   res.status(200).json({
-   status: success,
-   Message: "Events retrieved successfully",
+   success: true,
+   message: "Operation successful",
    data: {
      event
    } 
@@ -270,7 +278,7 @@ exports.toggleEventStatus = asyncHandler(async (req, res, next) => {
  }
  await event.save();
  res.status(200).json({
-   status: "success",
+   success: true,
    message: `Event status changed to ${event.status}`,
    data: {
      event

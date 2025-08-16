@@ -1,0 +1,40 @@
+ <!DOCTYPE html>
+  <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pending Events</title>
+  </head>
+  <body style="background-color: aliceblue; font-family: Arial, sans-serif; padding: 2em;">
+
+    <div style="display: grid; padding: 2em; justify-content: center;">
+      <h1 style="padding-bottom: 1em; text-align: center;">
+      Event Ticket Pending Events for Approval
+      </h1>
+
+      <table border="1" cellpadding="10" cellspacing="0" style="border-collapse: collapse; background-color: white; width: 100%; max-width: 800px;">
+        <thead>
+          <tr style="background-color: #f4f4f4;">
+            <th style="text-align: left;">Event ID</th>
+            <th style="text-align: left;">Title</th>
+            <th style="text-align: left;">Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${events.map(ev => `
+            <tr>
+              <td>${pendingEvents._id}</td>
+              <td>${pendingEvents.title}</td>
+              <td>${pendingEvents.description || "No description provided"}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+
+      <p style="margin-top: 20px; text-align: center;">
+        Please log in to the admin dashboard to approve or reject these events.
+      </p>
+    </div>
+
+  </body>
+  </html>

@@ -24,6 +24,11 @@ const userSchema = new mongoose.Schema({
     enum: ["attendee", "admin", "organizer"],
     required: true,
   },
+  status: {
+    type: String,
+    enum: ["active", "inactive"],
+    default: "active",
+  },
   passwordUpdatedAt: Date,
   resetPasswordToken: {
     type: String,

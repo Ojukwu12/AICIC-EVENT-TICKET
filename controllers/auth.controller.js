@@ -63,7 +63,9 @@ exports.login = asyncHandler(async (req, res, next) => {
   ) {
     return next(new AppError("Invalid credentials", 401));
   }
-
+  if (foundUser.status === "inactive") {
+    return next(new AppError("Your account is inactive", 403));
+  }
   return generateToken(res, foundUser._id);
 });
 
@@ -98,7 +100,7 @@ exports.forgotPassword = asyncHandler(async (req, res, next) => {
       next
     );
     res.status(200).json({
-      status: "success",
+      success: true,
       message: "Token sent to email!",
     });
   } catch (error) {
@@ -202,7 +204,7 @@ exports.getMyProfile = asyncHandler(async (req, res, next) => {
     return next(new AppError("User not found", 404));
   }
   res.status(200).json({
-    status: "success",
+    success: true,
     data: {
       user,
     },
@@ -214,7 +216,7 @@ exports.logout = asyncHandler(async (req, res, next) => {
     secure: true,
   });
   res.status(200).json({
-    status: "success",
+    success: true,
     message: "Logged out successfully",
   });
 });

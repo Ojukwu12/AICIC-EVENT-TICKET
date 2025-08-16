@@ -1,5 +1,7 @@
 const dotenv = require("dotenv");
 dotenv.config({ path: "config.env" });
+require("./services/cronRemovalOfExpiredEvents");
+require("./services/cronAdminNotification")
 
 const app = require("./app");
 const mongoose = require("mongoose");

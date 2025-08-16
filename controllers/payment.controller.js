@@ -85,6 +85,7 @@ exports.initializePayment = asyncHandler(async (req, res, next) => {
   await booking.save();
 
   res.status(200).json({
+    success: true,
     status: "pending",
     reference,
     paymentLink: authorization_url,
@@ -128,18 +129,17 @@ exports.verifyPayment = asyncHandler(async (req, res, next) => {
       { new: true }
     );
     res.status(200).json({
-      success: "true",
+      success: true,
       message: "Payment verified successfully",
     });
   } else if (paymentData.status === "failed") {
-    // ✅ Fixed: else if
     await Booking.findByIdAndUpdate(
       paymentData.metadata.bookingId,
       { status: "pending", paymentDetails: null },
       { new: true }
     );
-    res.status(200).json({
-      success: "true",
+    res.status(400).json({
+      success: false,
       message: "Payment verification failed",
     });
   } else {
@@ -167,13 +167,13 @@ exports.webhook = asyncHandler(async (req, res, next) => {
     }
       if (booking.status === "paid") {
         return res.status(200).json({
-          success: "true",
+          success: false,
           message: "Payment already completed for this booking",
         });
       }
     if (booking.status === "cancelled") {
       return res.status(400).json({
-        success: "true",
+        success: false,
         message: "Booking has already been cancelled",
       });
     }
@@ -181,9 +181,9 @@ exports.webhook = asyncHandler(async (req, res, next) => {
     booking.paymentDetails = null;
     await booking.save();
   return res.status(400).json({
-    success: "true",
-      message: "Payment failed, booking updated successfully",
-    });
+    success: false,
+    message: "Payment failed, booking updated successfully",
+  });
   }
  
  else if (event.event === "charge.success") {
@@ -195,11 +195,11 @@ exports.webhook = asyncHandler(async (req, res, next) => {
     if (booking.status === "paid") {
       return res
         .status(200)
-        .json({ success: "true", message: "Booking already paid" });
+        .json({ success: false, message: "Booking already paid" });
     }
      if (booking.status === "cancelled") {
        return res.status(400).json({
-         success: "true",
+         success: false,
          message: "Booking has already been cancelled",
        });
      }
@@ -222,12 +222,12 @@ exports.webhook = asyncHandler(async (req, res, next) => {
     };
     await booking.save();
   return  res.status(200).json({
-      success: "true",
+      success: true,
       message: "Payment successful, booking updated successfully",
     });
   }else{ // Ignore other events
  return res.status(200).json({
-    success: "true",
+    success: true,
     message: "Event received but not processed",
   });
 }
@@ -259,9 +259,9 @@ exports.getPaymentInfo = asyncHandler(async (req, res, next) => {
     return next(new AppError("Booking not found", 404));
   }
   res.status(200).json({
-    success: "true",
+    success: true,
     data: booking.paymentInfo,
-    message: "Payment information retrieved successfully",
+    message: "Operation successful",
   });
 });
 exports.getUserPayments = asyncHandler(async (req, res, next) => {
@@ -279,8 +279,9 @@ exports.getUserPayments = asyncHandler(async (req, res, next) => {
   }));
 
   res.status(200).json({
-    success: "true",
+    success: true,
     data: paymentHistory,
+    message: "Operation successful"
   });
 });
 
@@ -336,7 +337,7 @@ exports.completeFreeBookings = asyncHandler(
     };
     await booking.save();
     res.status(200).json({
-      status: "success",
+      success: true,
       message: "Free booking completed successfully",
     });
   }
@@ -368,5 +369,5 @@ exports.getAllPayments = asyncHandler(async (req, res, next) => {
     paymentInfo: booking.paymentInfo,
     event: booking.event,
   }));
-  res.status(200).json({ status: "success", data: paymentData });
+  res.status(200).json({ success: true, data: paymentData });
 });

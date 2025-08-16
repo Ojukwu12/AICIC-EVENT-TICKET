@@ -41,7 +41,7 @@ const eventSchema = new mongoose.Schema({
   // Status Management
   status: {
     type: String,
-    enum: ["draft", "published", "cancelled"],
+    enum: ["draft", "published", "cancelled", "ended"],
     default: "draft",
     required: true,
   },

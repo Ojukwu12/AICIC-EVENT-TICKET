@@ -70,10 +70,25 @@ exports.reserveBooking = asyncHandler(async (req, res, next) => {
   }
   // Send confirmation email
   try {
-    await sendMail("everybody", "ticketBookingSuccesful", {"user.name": req.user.name,"newBooking.ticketRef": newBooking.ticketRef, "event.name": event.name, "event.date": event.date }, req.user.email, "Ticket Booking Successful", next);}catch (error) {
-      console.error("Error sending booking confirmation email:", error);
-      return next(new AppError("Failed to send booking confirmation email", 500));
-    }
+    await sendMail(
+      "everybody",
+      "ticketBookingSuccesful",
+      {
+        "user.name": req.user.name,
+        "newBooking.ticketRef": newBooking.ticketRef,
+        "event.name": event.name,
+        "event.date": event.date,
+      },
+      req.user.email,
+      "Ticket Booking Successful",
+      next
+    );
+  } catch (error) {
+    console.error("Error sending booking confirmation email:", error);
+    return next(
+      new AppError("Failed to send booking confirmation email", 500)
+    );
+  }
   res.status(201).json({
     status: "success",
     data: { booking: newBooking },
@@ -205,16 +220,16 @@ exports.getBookingById = asyncHandler(async (req, res, next) => {
     );
   }
   res.status(200).json({
-    status: "success",
+    success: true,
     data: {
       booking,
     },
+    message: "Operation successful",
   });
 });
 
 exports.getAllBookings = asyncHandler(async (req, res, next) => {
-
-  const filter = {}
+  const filter = {};
   if (req.query.eventId) {
     filter.event = req.query.eventId;
   }
@@ -235,25 +250,36 @@ exports.getAllBookings = asyncHandler(async (req, res, next) => {
   }
   if (req.query.search) {
     filter.$or = [
-      { "attendee.name": { $regex: req.query.search, $options: "i" } },
+      {
+        "attendee.name": { $regex: req.query.search, $options: "i" },
+      },
       { "event.title": { $regex: req.query.search, $options: "i" } },
     ];
   }
   if (req.query.quantity) {
     filter.quantity = parseInt(req.query.quantity);
   }
-  const bookings = await Booking.find(filter)
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+  const sort = req.query.sort || "date";
+  const total = await Booking.countDocuments(filter);
+  const booking = await Booking.find(filter)
     .populate("attendee", "name email")
-    .populate("event", "title price");
-
-  if (!bookings || bookings.length === 0) {
+    .populate("event", "title price")
+    .sort(sort)
+    .skip(skip)
+    .limit(limit);
+  if (booking.length === 0) {
     return next(new AppError("No bookings found", 404));
   }
   res.status(200).json({
-    status: "success",
-    data: {
-      bookings,
-    },
+    Success: true,
+    total,
+    page,
+    pages: Math.ceil(total / limit),
+    Data: booking,
+    message: "Operation successful",
   });
 });
 
@@ -279,10 +305,11 @@ exports.getBookingByReference = asyncHandler(
       );
     }
     res.status(200).json({
-      status: "success",
+      success: true,
       data: {
         booking,
       },
+      message: "Booking retrieved successfully",
     });
   }
 );
