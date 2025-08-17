@@ -7,7 +7,7 @@ cron.schedule("0 0 * * *", async () => {
   const currentDate = new Date()
   currentDate.setUTCHours(0,0,0,0);
   const endedEvents = await Event.find({
-   status: "published",
+   status: { $in: ["published", "draft"] },
    endDate: { $lt: currentDate }
   });
   if (endedEvents.length > 0) {

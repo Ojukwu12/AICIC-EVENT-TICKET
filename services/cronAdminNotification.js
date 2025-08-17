@@ -2,7 +2,7 @@ const cron = require("node-cron");
 const Event = require("../models/events.model");
 const sendMail = require("../utils/sendMail");
 const User = require("../models/user.model");
-
+// check every 1 minute for new pending events and notify admins for approval
 cron.schedule("0 * * * *", async () => {
   try {
     console.log("Checking for new pending events ....");

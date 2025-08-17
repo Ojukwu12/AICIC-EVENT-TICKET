@@ -361,3 +361,37 @@ exports.eventStats = asyncHandler(async (req, res, next) => {
     message: "Event statistics retrieved successfully",
   });
 });
+
+exports.revenueStats = asyncHandler(async (req, res, next) => {
+  const filter = {};
+
+  res.status(200).json({
+    success: true,
+    message: "I could not do this yet, but I will try to do it soon",
+  });
+});
+
+exports.notificationTest = asyncHandler(async (req, res, next) => {
+  const userEmail = req.user.email;
+
+  try {
+    await sendMail(
+      "everybody",
+      "testEmail",
+      {
+        "user.email": userEmail,
+      },
+      userEmail,
+      "Test Notification"
+    );
+  } catch (error) {
+    console.error("Error occurred while sending test Email:", error);
+    return next(new AppError("Failed to send test Email", 500));
+  }
+
+  console.log("Sending test Email...");
+  res.status(200).json({
+    success: true,
+    message: "Test Email sent successfully",
+  });
+});

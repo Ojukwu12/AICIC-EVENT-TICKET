@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Event Reminder</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f8f9fa;
+      }
+      .container {
+        max-width: 600px;
+        margin: 20px auto;
+        background: #ffffff;
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      }
+      h2 {
+        color: #2c3e50;
+        margin-bottom: 10px;
+      }
+      p {
+        color: #555555;
+        line-height: 1.6;
+      }
+      .details {
+        margin: 20px 0;
+        padding: 15px;
+        background: #f1f3f5;
+        border-radius: 8px;
+      }
+      .details strong {
+        display: inline-block;
+        width: 80px;
+      }
+      .btn {
+        display: inline-block;
+        padding: 12px 20px;
+        margin-top: 20px;
+        background: #007bff;
+        color: #ffffff !important;
+        text-decoration: none;
+        border-radius: 6px;
+        font-weight: bold;
+      }
+      .footer {
+        margin-top: 30px;
+        font-size: 13px;
+        color: #888888;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h2>⏰ Event Reminder</h2>
+      <p>Hi {{user.name}},</p>
+      <p>This is a friendly reminder about your upcoming event:</p>
+
+      <div class="details">
+        <p><strong>Title:</strong> {{event.title}}</p>
+        <p><strong>Date:</strong> {{event.date}}</p>
+        <p><strong>Time:</strong> {{event.time}}</p>
+        <p><strong>Venue:</strong> {{event.location}}</p>
+      </div>
+
+      <p>We’re excited to see you there! 🎉</p>
+
+      <a href="{{eventLink}}" class="btn">View Event</a>
+
+      <div class="footer">
+        <p>
+          If you have any questions, feel free to reply to this email.
+        </p>
+        <p>— The Events Team</p>
+      </div>
+    </div>
+  </body>
+</html>
