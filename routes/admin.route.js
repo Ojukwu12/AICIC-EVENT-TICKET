@@ -13,3 +13,5 @@ router.get('/stats/overview', onlyAdmin, adminController.platformStats)
 router.get('/stats/events', onlyAdmin, adminController.eventStats)
 router.get('/stats/revenue', onlyAdmin, adminController.revenueStats)
 router.post('/notifications/test', onlyAdmin, adminController.notificationTest)
+
+module.exports = router;
