@@ -93,6 +93,12 @@ if (req.query.minPrice || req.query.maxPrice){
    filter['price'].$lte = parseFloat(req.query.maxPrice);
  }
 }
+ if (req.query.availableTickets) {
+   filter.availableTickets = parseInt(req.query.availableTickets);
+ }
+ if (req.query.totalTickets) {
+   filter.totalTickets = parseInt(req.query.totalTickets);
+ }
 
 const page = parseInt(req.query.page) || 1
 const limit = parseInt(req.query.limit) || 10
