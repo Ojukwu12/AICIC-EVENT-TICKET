@@ -24,11 +24,12 @@ exports.signup = asyncHandler(async (req, res, next) => {
     return next(new AppError("Passwords do not match", 400));
   }
   const user = await User.create(value);
+  const eventUrl = `${process.env.BASE_URL}/api/v1/events`;
   try {
     await sendMail(
       "everybody",
       "signup",
-      { "user.name": user.name },
+      { "user.name": user.name, eventUrl: eventUrl },
       user.email,
       "Successful Signup",
       next

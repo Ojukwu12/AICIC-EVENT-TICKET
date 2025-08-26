@@ -48,7 +48,6 @@ function sendProdError(err, res) {
 }
 
 exports.globalErrorHandler = (err, req, res, next) => {
-  console.error("Global Error", err);
   if (process.env.NODE_ENV === "development") {
     sendDevError(err, res);
   } else {

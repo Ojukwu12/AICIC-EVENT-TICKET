@@ -10,10 +10,12 @@ const paymentRoute = require("./routes/payment.route");
 const adminRoute = require("./routes/admin.route");
 const errorHandler = require("./controllers/error.controller");
 const cookieParser = require("cookie-parser");
+const limiter = require("./middlewares/ratelimit");
 
 app.use(express.json());
 app.use(morgan("dev"));
 app.use(cookieParser());
+app.use(limiter);
 
 app.use("/api/v1/users", userRoute);
 app.use("/api/v1/auth", authRoute);

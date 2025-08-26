@@ -6,6 +6,7 @@ const asyncHandler = require("../utils/asyncHandler");
 const joi = require("joi");
 const mongoose = require("mongoose");
 const { sendMail } = require("../utils/sendMail");
+const {client} = require("../utils/redis")
 
 exports.reserveBooking = asyncHandler(async (req, res, next) => {
   const Schema = joi.object({
@@ -158,6 +159,8 @@ exports.cancelBooking = asyncHandler(async (req, res, next) => {
 
   // Delete the booking
   await Booking.findByIdAndDelete(bookingId);
+ // clear cache
+  await client.del(`/api/v1/bookings/${bookingId}`);
 
   res.status(200).json({
     status: "success",

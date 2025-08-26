@@ -5,6 +5,7 @@ const mongoose = require("mongoose")
 const User = require("../models/user.model")
 const Event = require("../models/events.model");
 const { sendMail } = require("../utils/sendMail");
+const { client } = require("../utils/redis");
 
 exports.postEvent = asyncHandler(async (req, res, next) =>{
        const schema = joi.object({
@@ -198,7 +199,7 @@ exports.deleteEvent = asyncHandler(async (req, res, next) => {
  if (!event) {
    return next(new AppError("Event not found", 404));
  }
-
+ await client.del(`/api/v1/events/${id}`);
  res.status(200).json({
    success: true,
    message: "Operation successful",
@@ -228,13 +229,16 @@ exports.updateEvent = asyncHandler(async (req, res, next) => {
  if (error) { 
    return next(new AppError(error.details[0].message, 400));
  }
- const event = await Event.findByIdAndUpdate(id,value,{new: true});
- if (!event) {
-   return next(new AppError("Event not found", 404));
- }
  if (req.user._id.toString() !== event.organizer.toString()) {
    return next(new AppError("You are not authorized to update this event", 403));
  }
+  const event = await Event.findByIdAndUpdate(id, value, {
+    new: true,
+  });
+   if (!event) {
+     return next(new AppError("Event not found", 404));
+   }
+ await client.del(`/api/v1/events/${id}`);
  res.status(200).json({
    success: true,
    message: "Operation successful",
