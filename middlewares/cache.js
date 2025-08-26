@@ -1,6 +1,7 @@
 const client = require("../utils/redis");
 
 async function cache(req, res, next) {
+ try {
   const key = req.originalUrl;
 
   
@@ -8,16 +9,17 @@ async function cache(req, res, next) {
 
   if (cachedData) {
     return res.send(JSON.parse(cachedData));
-  } else{
- const originalJson = res.json.bind(res);
-  res.json = (body) => {
-   if (res.statusCode === 200) {
-    client.setEx(key, 600, JSON.stringify(body));
-    originalJson(body);
-  }
+  } else {
+   res.sendResponse = res.send;
+   res.send = async (body) => {
+    res.sendResponse(body);
+    await client.setEx(key, 3600, JSON.stringify(body)); // Cache for 1 hour
   console.log("stored to cache");
  }
 
+  next();
+}} catch (err) {
+  console.error("Cache middleware error:", err);
   next();
 }
 }
