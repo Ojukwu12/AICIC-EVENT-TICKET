@@ -9,16 +9,19 @@ async function cache(req, res, next) {
 
   if (cachedData) {
     return res.send(JSON.parse(cachedData));
-  } else {
-   res.sendResponse = res.send;
-   res.send = async (body) => {
-    res.sendResponse(body);
-    await client.setEx(key, 3600, JSON.stringify(body)); // Cache for 1 hour
-  console.log("stored to cache");
- }
+  } else if (res.statusCode === 200) {
+    res.sendResponse = res.send;
+    res.send = async (body) => {
+      res.sendResponse(body);
+      await client.setEx(key, 3600, JSON.stringify(body)); // Cache for 1 hour
+      console.log("stored to cache");
+    };
 
-  next();
-}} catch (err) {
+    next();
+  } else {
+    next();
+  }
+} catch (err) {
   console.error("Cache middleware error:", err);
   next();
 }
