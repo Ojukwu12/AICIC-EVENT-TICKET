@@ -2,9 +2,8 @@ const express = require("express");
 const morgan = require("morgan");
 const app = express();
 const AppError = require("./utils/appError");
-const { userRoute } = require("./routes/user.route");
 const authRoute = require("./routes/auth.route");
-const eventRoute = require("./routes/event.route")
+const eventRoute = require("./routes/event.route");
 const ticketRoute = require("./routes/ticket.route");
 const paymentRoute = require("./routes/payment.route");
 const adminRoute = require("./routes/admin.route");
@@ -17,7 +16,7 @@ app.use(morgan("dev"));
 app.use(cookieParser());
 app.use(limiter);
 
-app.use("/api/v1/users", userRoute);
+
 app.use("/api/v1/auth", authRoute);
 app.use("/api/v1/events", eventRoute);
 app.use("/api/v1/tickets", ticketRoute);

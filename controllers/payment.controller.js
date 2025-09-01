@@ -8,26 +8,16 @@ const mongoose = require("mongoose");
 
 exports.initializePayment = asyncHandler(async (req, res, next) => {
   const schema = joi.object({
-    email: joi.string().email().required(),
-    amount: joi.number().min(100).required(),
-    eventId: joi.string().required(),
     bookingId: joi.string().required(),
   });
   const { value, error } = schema.validate(req.body);
-  if (error) {
-    return next(new AppError(error.details[0].message, 400));
-  }
-  if (!mongoose.Types.ObjectId.isValid(value.eventId)) {
-    return next(new AppError("Invalid event ID", 400));
+  if (error || !value) {
+    return next(new AppError(error?.details[0].message || "Invalid request", 400));
   }
   if (!mongoose.Types.ObjectId.isValid(value.bookingId)) {
     return next(new AppError("Invalid booking ID", 400));
   }
-  if (req.user.email.toString() !== value.email.toString()) {
-    return next(
-      new AppError("You are not authorized to make this payment", 403)
-    );
-  }
+
   const booking = await Booking.findById(value.bookingId);
   if (!booking) {
     return next(new AppError("Booking not found", 404));
@@ -56,19 +46,14 @@ exports.initializePayment = asyncHandler(async (req, res, next) => {
       )
     );
   }
-  if (booking.totalPrice !== value.amount) {
-    return next(
-      new AppError("Payment amount does not match booking total", 400)
-    );
-  }
   const response = await axios.post(
     `https://api.paystack.co/transaction/initialize`,
     {
-      email: value.email,
-      amount: value.amount * 100, 
+      email: booking.attendee.email,
+      amount: booking.totalprice * 100,
       metadata: {
-        eventId: value.eventId,
-        bookingId: value.bookingId,
+        eventId: booking.event.toString(),
+        bookingId: booking._id.toString(),
       },
     },
     {
@@ -287,12 +272,12 @@ exports.getUserPayments = asyncHandler(async (req, res, next) => {
 
 exports.completeFreeBookings = asyncHandler(
   async (req, res, next) => {
-    const bookingId = req.params.bookingId;
+    const bookingId = req.params.ticketId;
     const booking = await Booking.findById(bookingId);
     if (!booking) {
       return next(new AppError("Booking not found", 404));
     }
-    if (booking.totalPrice > 0) {
+    if (booking.totalprice > 0) {
       return next(new AppError("This booking is not free", 400));
     }
     if (booking.status === "paid") {
@@ -319,13 +304,13 @@ exports.completeFreeBookings = asyncHandler(
       status: "free",
       amount: 0,
       currency: "NGN",
-      paidAt: new Date(),
-      reference: crypto.randomBytes(16).toString("hex"),
+      paidAt: new Date(Date.now()),
+      reference: `FREE-${booking.ticketRef}`,
     };
     booking.paymentInfo = {
       amount: 0,
       currency: "NGN",
-      paidAt: new Date(),
+      paidAt: new Date(Date.now()),
       reference: booking.paymentDetails.reference,
       channel: "free",
       bank: null,

@@ -13,12 +13,15 @@ exports.signup = asyncHandler(async (req, res, next) => {
     password: Joi.string().min(6).required(),
     confirmPassword: Joi.string().required(),
     role: Joi.string().valid("attendee", "organizer").required(),
-  });
+  }).min(5);
 
   const { error, value } = schema.validate(req.body);
-  if (error) {
-    return next(new AppError(error.details[0].message, 400));
+  if (error || !value) {
+    return next(
+      new AppError(error?.details[0].message || "Invalid input", 400)
+    );
   }
+
 
   if (value.password != value.confirmPassword) {
     return next(new AppError("Passwords do not match", 400));

@@ -10,21 +10,23 @@ const {client} = require("../utils/redis")
 
 exports.reserveBooking = asyncHandler(async (req, res, next) => {
   const Schema = joi.object({
-    attendee: joi.string().required(),
     event: joi.string().required(),
     quantity: joi.number().required().min(1),
-  });
+    force: joi.boolean().default(false).optional()
+  })
   const { value, error } = Schema.validate(req.body);
   if (error) {
     return next(new AppError(error.details[0].message, 400));
   }
-
   // Check if event exists and get event details
   const event = await Event.findById(value.event);
   if (!event) {
     return next(new AppError("Event not found", 404));
   }
-
+   //Check event status
+   if(event.status!== "published"){
+     return next(new AppError("Event is not Available for booking", 400));
+   }
   // Check if event date is in the future
   if (new Date() > new Date(event.date)) {
     return next(
@@ -36,18 +38,22 @@ exports.reserveBooking = asyncHandler(async (req, res, next) => {
   if (value.quantity > event.availableTickets) {
     return next(new AppError("Not enough tickets available", 400));
   }
+  
 
   // Check if booking already exists for this user and event
   const existingBooking = await Booking.findOne({
-    attendee: value.attendee,
+    attendee: req.user._id,
     event: value.event,
+    quantity: value.quantity,
   });
   if (existingBooking) {
-    return next(
-      new AppError("Booking already exists for this event", 400)
-    );
+    return {
+      "message": "Duplicate booking found, do you want to proceed?",
+      "required": "write force: true"
+    }
   }
-
+  // save user details to ticket
+  value.attendee = req.user._id;
   // Calculate total price
   const totalPrice = value.quantity * event.price;
   value.totalprice = totalPrice;
@@ -72,7 +78,7 @@ exports.reserveBooking = asyncHandler(async (req, res, next) => {
   // Send confirmation email
   try {
     await sendMail(
-      "everybody",
+      "attendee",
       "ticketBookingSuccesful",
       {
         "user.name": req.user.name,

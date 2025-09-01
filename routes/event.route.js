@@ -15,5 +15,4 @@ router.get('/:id', protectRoute, cache,eventController.getEventById)
 router.delete('/:id', protectRoute, onlyAdmin, eventController.deleteEvent)
 router.put('/:id', protectRoute, eventAccess, eventController.updateEvent)
 router.get('/organizer/:organizerId', protectRoute, cache, eventController.getEventByOrganizer)
-router.put('/:id/status', protectRoute, eventAccess, eventController.toggleEventStatus)
 module.exports = router

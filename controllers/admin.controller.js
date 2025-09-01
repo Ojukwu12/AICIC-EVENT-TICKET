@@ -4,7 +4,7 @@ const Event = require("../models/events.model");
 const User = require("../models/user.model");
 const Booking = require("../models/tickets.model");
 const joi = require("joi");
-const sendMail = require("../utils/sendMail");
+const {sendMail} = require("../utils/sendMail");
 const mongoose = require("mongoose");
 
 exports.getAllUsers = asyncHandler(async (req, res, next) => {
@@ -47,35 +47,44 @@ exports.getAllUsers = asyncHandler(async (req, res, next) => {
 });
 
 exports.eventApproval = asyncHandler(async (req, res, next) => {
+  console.log("Event approval called");
   const adminEmail = req.user.email;
   const schema = joi.object({
-    status: joi
+    approval: joi
       .string()
       .valid("approved", "rejected", "pending")
       .required(),
   });
   const { value, error } = schema.validate(req.body);
-  if (error) {
-    return next(new AppError(error.details[0].message, 400));
+  if (error || !value) {
+    return next(
+      new AppError(
+        error?.details[0].message || "Invalid request",
+        400
+      )
+    );
   }
-  const { status } = value;
-  const eventId = req.params.eventId;
+  const { approval } = value;
+  const eventId = req.params.id;
   const event = await Event.findById(eventId);
+  console.log("Event found:", event);
   const user = await User.findById(event.organizer);
   if (!event) {
     return next(new AppError("Event not found", 404));
   }
-  event.approval = status;
-  await event.save();
-  if (status === "approved") {
-    // Send email to user
+  if (event.status !== "draft") {
+    return next(new AppError("Event is not in draft status", 400));
+  }
+  event.approval = approval;
+  if (event.approval.toString() === "approved") {
+    event.status = "published";
     try {
       await sendMail(
         "Organizer",
         "eventAccepted",
         {
           "user.name": user.name,
-          "event.name": event.name,
+          "event.name": event.title,
           "event.date": event.date,
           "admin.email": adminEmail,
         },
@@ -87,7 +96,7 @@ exports.eventApproval = asyncHandler(async (req, res, next) => {
       console.error("Error sending approval email:", error);
       return next(new AppError("Failed to send approval email", 500));
     }
-  } else if (status === "rejected") {
+  } else if (event.approval.toString() === "rejected") {
     // Send email to user
     try {
       await sendMail(
@@ -95,7 +104,7 @@ exports.eventApproval = asyncHandler(async (req, res, next) => {
         "eventRejected",
         {
           "user.name": user.name,
-          "event.name": event.name,
+          "event.name": event.title,
           "event.date": event.date,
           "admin.email": adminEmail,
         },
@@ -111,11 +120,14 @@ exports.eventApproval = asyncHandler(async (req, res, next) => {
     }
   }
 
+  await event.save();
+
   res.status(200).json({
     success: true,
     data: {
       event,
     },
+    message: "Operation successful",
   });
 });
 
