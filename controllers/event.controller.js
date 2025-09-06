@@ -58,16 +58,24 @@ exports.postEvent = asyncHandler(async (req, res, next) => {
       )
     );
   }
-  if (user.role !== "admin" && user.role !== "organizer") {
-    return next(
-      new AppError("You are not authorized to create this event", 403)
-    );
-  }
+    if (user.role !== "admin" && user.role !== "organizer") {
+      return next(
+        new AppError(
+          "You are not authorized to create this event",
+          403
+        )
+      );
+    }
+    let media = [];
+    if (req.files) {
+      media = req.files.map(file => file.path);
+    }
 
   const eventDate = new Date(value.date);
   eventDate.setHours(0, 0, 0, 0);
   value.date = eventDate;
   value.organizer = id;
+  value.media = media;
 
   const event = await Event.create(value);
 

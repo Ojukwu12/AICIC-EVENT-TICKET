@@ -376,10 +376,28 @@ exports.eventStats = asyncHandler(async (req, res, next) => {
 
 exports.revenueStats = asyncHandler(async (req, res, next) => {
   const filter = {};
+  if (req.query.startDate || req.query.endDate) {
+    filter.createdAt = {};
+    if (req.query.startDate) {
+      filter.createdAt.$gte = new Date(req.query.startDate);
+    }
+    if (req.query.endDate) {
+      filter.createdAt.$lte = new Date(req.query.endDate);
+    }
+  }
+  const totalEvents = await Event.countDocuments(filter);
+  const totalRevenue = await Booking.aggregate([
+    { $match: { status: "paid", ...filter } },
+    { $group: { _id: null, total: { $sum: "$totalprice" } } },
+  ]);
 
   res.status(200).json({
     success: true,
-    message: "I could not do this yet, but I will try to do it soon",
+    data: {
+      totalEvents,
+      totalRevenue: totalRevenue[0]?.total || 0,
+    },
+    message: "Revenue statistics retrieved successfully",
   });
 });
 

@@ -215,12 +215,14 @@ exports.getMyProfile = asyncHandler(async (req, res, next) => {
   });
 });
 exports.logout = asyncHandler(async (req, res, next) => {
+  const token = jwt.sign({ id: req.user._id }, { expiresIn: "1s" });
   res.clearCookie("refreshToken", {
     httpOnly: true,
     secure: true,
   });
   res.status(200).json({
     success: true,
+    token,
     message: "Logged out successfully",
   });
 });
@@ -242,6 +244,7 @@ function generateToken(res, userId) {
     secure: process.env.NODE_ENV === "production",
     sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     maxAge: 30 * 24 * 60 * 60 * 1000,
+    // expires in 30 days
   };
 
   res

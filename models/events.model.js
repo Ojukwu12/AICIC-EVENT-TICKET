@@ -63,8 +63,8 @@ const eventSchema = new mongoose.Schema({
   },
   // Media
   media: {
-    type: String,
-    default: ''
+    type: [String],
+    default: []
   },
   createdAt: {
     type: Date,
